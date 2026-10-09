@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Authentication: JWT & Beyond</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        primary: '#4f46e5',
+                        dark: '#0f172a',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- PrismJS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* Custom Scrollbar for a polished look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* PrismJS overrides for better integration */
+        pre[class*="language-"] {
+            border-radius: 0.5rem;
+            margin: 1.5em 0;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        
+        .nav-link.active {
+            color: #4f46e5;
+            background-color: #e0e7ff;
+            border-right: 3px solid #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Mobile Header & Menu Toggle -->
+    <div class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-50 flex items-center justify-between px-4 shadow-sm">
+        <div class="flex items-center gap-2 text-indigo-600 font-bold text-xl">
+            <i class="ph-fill ph-shield-check text-2xl"></i>
+            AuthMastery
+        </div>
+        <button id="mobile-menu-btn" class="text-slate-600 hover:text-indigo-600 focus:outline-none">
+            <i class="ph ph-list text-3xl"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar" class="fixed top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto">
+        <div class="p-6 hidden lg:flex items-center gap-2 text-indigo-600 font-bold text-2xl border-b border-slate-100">
+            <i class="ph-fill ph-shield-check"></i>
+            AuthMastery
+        </div>
+        
+        <div class="py-6 flex flex-col space-y-1">
+            <div class="px-6 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Topics</div>
+            <a href="#intro" class="nav-link block px-6 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-medium">1. Introduction to JWT</a>
+            <a href="#strategies" class="nav-link block px-6 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-medium">2. Auth Strategies</a>
+            <a href="#user-management" class="nav-link block px-6 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-medium">3. User Management</a>
+            <a href="#middleware" class="nav-link block px-6 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-medium">4. Middleware Functions</a>
+            <a href="#implementation" class="nav-link block px-6 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-medium">5. Full Implementation</a>
+        </div>
+    </nav>
+
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Main Content -->
+    <main class="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
+        <div class="max-w-4xl mx-auto px-6 py-12 lg:px-12 lg:py-16">
+            
+            <!-- Hero Section -->
+            <header class="mb-16">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mb-6">
+                    <i class="ph ph-book-open"></i> Educational Guide
+                </div>
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6">
+                    The Complete Guide to <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">Modern Authentication</span>
+                </h1>
+                <p class="text-lg text-slate-600 leading-relaxed max-w-2xl">
+                    Master secure web application development. Learn the theory behind JSON Web Tokens (JWT), explore architectural strategies, understand secure user management, and implement robust middleware in Node.js.
+                </p>
+            </header>
+
+            <!-- Section 1: Intro to JWT -->
+            <section id="intro" class="mb-20 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl">1</div>
+                    <h2 class="text-3xl font-bold text-slate-900">Introduction to JWT</h2>
+                </div>
+                
+                <div class="prose prose-slate max-w-none text-slate-600 leading-relaxed space-y-6">
+                    <p>
+                        <strong>JSON Web Token (JWT)</strong> is an open standard (RFC 7519) that defines a compact and self-contained way for securely transmitting information between parties as a JSON object. This information can be verified and trusted because it is digitally signed.
+                    </p>
+                    
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">The Structure of a JWT</h3>
+                        <p class="mb-4">A JWT consists of three parts separated by dots (<code>.</code>):</p>
+                        
+                        <div class="flex flex-col md:flex-row gap-4 text-center font-mono text-sm break-all">
+                            <div class="flex-1 p-4 rounded-lg bg-red-50 text-red-700 border border-red-100">
+                                <span class="block font-bold mb-2 uppercase text-xs tracking-wider">Header</span>
+                                eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+                            </div>
+                            <div class="flex items-center justify-center text-slate-400 font-bold text-xl">.</div>
+                            <div class="flex-1 p-4 rounded-lg bg-purple-50 text-purple-700 border border-purple-100">
+                                <span class="block font-bold mb-2 uppercase text-xs tracking-wider">Payload</span>
+                                eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0
+                            </div>
+                            <div class="flex items-center justify-center text-slate-400 font-bold text-xl">.</div>
+                            <div class="flex-1 p-4 rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
+                                <span class="block font-bold mb-2 uppercase text-xs tracking-wider">Signature</span>
+                                SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+                            </div>
+                        </div>
+                        
+                        <ul class="mt-6 space-y-2 list-disc list-inside">
+                            <li><strong>Header:</strong> Contains the token type (JWT) and the signing algorithm being used (e.g., HMAC SHA256 or RSA).</li>
+                            <li><strong>Payload:</strong> Contains the claims (statements about an entity/user and additional data). <em>Never put secret data here, it's merely Base64 encoded, not encrypted!</em></li>
+                            <li><strong>Signature:</strong> Created by taking the encoded header, encoded payload, a secret, and the algorithm specified in the header to verify the token wasn't altered in transit.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: Auth Strategies -->
+            <section id="strategies" class="mb-20 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl">2</div>
+                    <h2 class="text-3xl font-bold text-slate-900">Authentication Strategies</h2>
+                </div>
+                
+                <p class="text-slate-600 mb-8">Choosing the right authentication strategy is critical for application scalability and security. Here is a comparison of the most common approaches.</p>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Session Auth -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-slate-100 text-slate-500 text-xs font-bold px-3 py-1 rounded-bl-lg">Traditional</div>
+                        <div class="text-3xl text-indigo-500 mb-4"><i class="ph-fill ph-hard-drives"></i></div>
+                        <h3 class="text-xl font-bold text-slate-900 mb-2">Session / Cookie Based</h3>
+                        <p class="text-sm text-slate-600 mb-4">Stateful authentication where the server stores session data and the client stores a Session ID in a cookie.</p>
+                        <ul class="text-sm text-slate-600 space-y-2">
+                            <li class="flex items-start gap-2"><i class="ph ph-check-circle text-green-500 mt-0.5"></i> Easy to revoke sessions instantly.</li>
+                            <li class="flex items-start gap-2"><i class="ph ph-check-circle text-green-500 mt-0.5"></i> Highly secure if cookies are HttpOnly.</li>
+                            <li class="flex items-start gap-2"><i class="ph ph-x-circle text-red-500 mt-0.5"></i> Harder to scale horizontally (requires session stores like Redis).</li>
+                        </ul>
+                    </div>
+
+                    <!-- Token Auth -->
+                    <div class="bg-white p-6 rounded-xl border border-indigo-200 shadow-sm relative overflow-hidden ring-1 ring-indigo-50/50">
+                        <div class="absolute top-0 right-0 bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">Modern</div>
+                        <div class="text-3xl text-indigo-500 mb-4"><i class="ph-fill ph-ticket"></i></div>
+                        <h3 class="text-xl font-bold text-slate-900 mb-2">Token Based (JWT)</h3>
+                        <p class="text-sm text-slate-600 mb-4">Stateless authentication where the server issues a signed token containing user claims, stored by the client.</p>
+                        <ul class="text-sm text-slate-600 space-y-2">
+                            <li class="flex items-start gap-2"><i class="ph ph-check-circle text-green-500 mt-0.5"></i> Highly scalable (stateless server).</li>
+                            <li class="flex items-start gap-2"><i class="ph ph-check-circle text-green-500 mt-0.5"></i> Excellent for mobile apps and microservices.</li>
+                            <li class="flex items-start gap-2"><i class="ph ph-x-circle text-red-500 mt-0.5"></i> Hard to invalidate before expiration.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-slate-50 border border-slate-200 rounded-lg p-5">
+                    <h4 class="font-semibold text-slate-900 mb-2"><i class="ph-fill ph-link text-indigo-500"></i> What about OAuth 2.0?</h4>
+                    <p class="text-sm text-slate-600">OAuth 2.0 is a <em>delegated authorization</em> framework (e.g., "Log in with Google"). It often uses JWTs under the hood for its Access and ID tokens (via OpenID Connect). It allows third-party applications to grant limited access to an HTTP service.</p>
+                </div>
+            </section>
+
+            <!-- Section 3: User Management -->
+            <section id="user-management" class="mb-20 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl">3</div>
+                    <h2 class="text-3xl font-bold text-slate-900">User Management Best Practices</h2>
+                </div>
+                
+                <p class="text-slate-600 mb-6">Handling user data safely is the foundation of any auth system. Never store plain-text passwords. Always use a strong, slow hashing algorithm.</p>
+
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-xl font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="ph-fill ph-password text-indigo-500"></i> Password Hashing (Registration)
+                        </h3>
+                        <p class="text-sm text-slate-600 mb-3">When a user registers, use <code>bcrypt</code> or <code>argon2</code> to hash the password before saving it to the database. Bcrypt automatically handles "salting" to defend against rainbow table attacks.</p>
+<pre><code class="language-javascript">const bcrypt = require('bcryptjs');
+
+// During User Registration
+async function registerUser(email, plainTextPassword) {
+    const saltRounds = 10; // Determines computation time
+    const hashedPassword = await bcrypt.hash(plainTextPassword, saltRounds);
+    
+    // Save 'email' and 'hashedPassword' to Database
+    return db.users.insert({ email, password: hashedPassword });
+}</code></pre>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="ph-fill ph-sign-in text-indigo-500"></i> Verifying Credentials (Login)
+                        </h3>
+                        <p class="text-sm text-slate-600 mb-3">During login, retrieve the hashed password from the DB and compare it against the provided plain-text password using bcrypt's compare function.</p>
+<pre><code class="language-javascript">// During User Login
+async function loginUser(email, plainTextPassword) {
+    const user = await db.users.findOne({ email });
+    if (!user) throw new Error('User not found');
+
+    // Securely compare hashes
+    const isMatch = await bcrypt.compare(plainTextPassword, user.password);
+    if (!isMatch) throw new Error('Invalid credentials');
+
+    // Generate JWT here...
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4: Middleware Functions -->
+            <section id="middleware" class="mb-20 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl">4</div>
+                    <h2 class="text-3xl font-bold text-slate-900">Middleware Functions</h2>
+                </div>
+                
+                <p class="text-slate-600 mb-6">
+                    In frameworks like Express, middleware functions execute during the lifecycle of a request to the server. An Authentication Middleware intercepts the request, checks for a valid JWT, and either allows access to the protected route or rejects it.
+                </p>
+
+                <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-6 rounded-r-lg">
+                    <p class="text-sm text-indigo-900">
+                        <strong>Standard Practice:</strong> The client sends the JWT in the <code>Authorization</code> HTTP header using the Bearer schema. <br>
+                        <code class="bg-indigo-100 px-1 py-0.5 rounded text-indigo-800 mt-2 inline-block">Authorization: Bearer &lt;token&gt;</code>
+                    </p>
+                </div>
+
+                <h3 class="text-lg font-semibold text-slate-800 mb-3">The Anatomy of Auth Middleware</h3>
+<pre><code class="language-javascript">const jwt = require('jsonwebtoken');
+
+const authenticateToken = (req, res, next) => {
+    // 1. Extract token from header
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // "Bearer TOKEN" -> "TOKEN"
+
+    // 2. No token? Unauthorized.
+    if (!token) {
+        return res.status(401).json({ message: 'Access denied. No token provided.' });
+    }
+
+    // 3. Verify token
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // 4. Attach user payload to request object
+        req.user = decoded; 
+        
+        // 5. Pass control to the next handler
+        next();
+    } catch (err) {
+        // Token is invalid or expired
+        return res.status(403).json({ message: 'Invalid or expired token.' });
+    }
+};
+
+module.exports = authenticateToken;</code></pre>
+            </section>
+
+            <!-- Section 5: Implementation -->
+            <section id="implementation" class="mb-20 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl">5</div>
+                    <h2 class="text-3xl font-bold text-slate-900">Full Implementation (Node.js/Express)</h2>
+                </div>
+                
+                <p class="text-slate-600 mb-6">
+                    Below is a complete, simplified Express application demonstrating Registration, Login, and a Protected Route tying all the concepts together.
+                </p>
+
+                <div class="rounded-xl overflow-hidden shadow-lg border border-slate-800 bg-[#1d1f21]">
+                    <div class="flex items-center px-4 py-3 bg-[#2d2f31] border-b border-slate-700">
+                        <div class="flex space-x-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="mx-auto text-xs text-slate-400 font-mono">server.js</div>
+                    </div>
+<pre class="!m-0 !rounded-none !bg-transparent"><code class="language-javascript">require('dotenv').config();
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const app = express();
+app.use(express.json()); // Parse JSON bodies
+
+// Mock Database
+const usersDB = []; 
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_dev_key';
+
+// --- MIDDLEWARE ---
+const requireAuth = (req, res, next) => {
+    const token = req.header('Authorization')?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+    try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        req.user = payload;
+        next();
+    } catch (err) {
+        res.status(403).json({ error: 'Invalid Token' });
+    }
+};
+
+// --- ROUTES ---
+
+// 1. REGISTER
+app.post('/api/register', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        // Check if user exists
+        if (usersDB.find(u => u.username === username)) {
+            return res.status(400).json({ error: 'User exists' });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Store user
+        const newUser = { id: Date.now(), username, password: hashedPassword };
+        usersDB.push(newUser);
+
+        res.status(201).json({ message: 'User created successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 2. LOGIN
+app.post('/api/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        // Find user
+        const user = usersDB.find(u => u.username === username);
+        if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+
+        // Compare password
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) return res.status(400).json({ error: 'Invalid credentials' });
+
+        // Generate JWT
+        const token = jwt.sign(
+            { id: user.id, username: user.username }, 
+            JWT_SECRET, 
+            { expiresIn: '1h' } // Token expires in 1 hour
+        );
+
+        res.json({ message: 'Logged in', token });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 3. PROTECTED ROUTE
+app.get('/api/dashboard', requireAuth, (req, res) => {
+    // req.user contains the decoded JWT payload
+    res.json({ 
+        message: `Welcome to your dashboard, ${req.user.username}!`,
+        secretData: "Here is your sensitive information."
+    });
+});
+
+// Start Server
+const PORT = 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+</code></pre>
+                </div>
+
+                <div class="mt-8 flex justify-center">
+                    <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-8 rounded-lg shadow-sm transition-colors flex items-center gap-2" onclick="alert('In a real environment, this would download or copy the starter kit.')">
+                        <i class="ph-bold ph-download-simple"></i> Download Starter Kit
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Footer -->
+            <footer class="border-t border-slate-200 pt-8 mt-16 text-center text-slate-500 text-sm">
+                <p>&copy; 2026 AuthMastery Education. Built with modern web standards.</p>
+            </footer>
+        </div>
+    </main>
+
+    <!-- Interactivity Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mobile menu toggle logic
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            function toggleMenu() {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+                
+                // Toggle icon
+                const icon = mobileMenuBtn.querySelector('i');
+                if(sidebar.classList.contains('-translate-x-full')) {
+                    icon.classList.remove('ph-x');
+                    icon.classList.add('ph-list');
+                } else {
+                    icon.classList.remove('ph-list');
+                    icon.classList.add('ph-x');
+                }
+            }
+
+            mobileMenuBtn.addEventListener('click', toggleMenu);
+            overlay.addEventListener('click', toggleMenu);
+
+            // Close mobile menu when clicking a link
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) { // only if on mobile
+                        toggleMenu();
+                    }
+                });
+            });
+
+            // Intersection Observer for highlighting active section in sidebar
+            const sections = document.querySelectorAll('section');
+            
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px 0px -60% 0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        
+                        // Remove active class from all links
+                        navLinks.forEach(link => {
+                            link.classList.remove('active', 'font-bold');
+                        });
+                        
+                        // Add active class to corresponding link
+                        const activeLink = document.querySelector(`.nav-link[href="#${id}"]`);
+                        if(activeLink) {
+                            activeLink.classList.add('active', 'font-bold');
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => observer.observe(section));
+            
+            // Override the default alert logic on the download button to simulate actual download or copy
+            window.alert = function(msg) {
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-4 right-4 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl z-50 flex items-center gap-2 animate-bounce transition-opacity duration-300';
+                toast.innerHTML = '<i class="ph-fill ph-check-circle text-green-400 text-xl"></i>' + msg;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
